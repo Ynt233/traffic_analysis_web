@@ -1,0 +1,170 @@
+<template>
+        <Layout :style="{margin:'10px',width:'1300px',height:'800px'}">
+            <br>
+            <div :style="{margin:'10px',width:'1300px',height:'400px'}">
+                <date-picker type="date" clearable placeholder="请选择上传时间" @on-change="getDate" :style="{float:'left',width:'250px'}"></date-picker>
+                <i-select v-model="illegalMassage" clearable placeholder="请选择违规行为" @on-change="getIllegal" :style="{width:'250px'}">
+                    <Option v-for="item in cityList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+                </i-select>
+                <Input  search enter-button v-model="plate" placeholder="搜索违规车牌"  @keyup.enter.native="search" :style="{float:'left',width:'250px'}"/> 
+                
+                <Button type="info" @click="clear">清空</Button>
+                <Table border :columns="columns1" :data="data1"></Table>
+                
+            </div>
+            <Editor></Editor>
+        </Layout>   
+</template>
+<script>
+import GLOBAL from '../api/global.js'
+// console.log("id"+ GLOBAL.videoId)
+import {getIllegalData} from '../api/api.js'
+import Editor from '../components/information'
+    var data1 = []
+    // var num = []
+    // var data2 = []
+    export default {
+        components:{
+          Editor //加入组件
+        },
+        methods:{
+                idJudge(){
+                    if(this.temp!=GLOBAL.videoId){
+                        this.loaddata()
+                        this.temp = GLOBAL.videoId
+                        // console.log(this.temp)
+                    }else{
+                        this.temp = GLOBAL.videoId
+                    }
+                },
+                loaddata(){
+                    getIllegalData(this.plate,GLOBAL.videoId,this.date,this.illegalMassage).then(response =>{
+                        this.data1 = response.data
+                        //console.log(GLOBAL.videoId)
+                        //console.log(this.date)
+                    })
+                    //console.log(this.data1)
+                },
+                search(){
+                    this.loaddata()
+                },
+                delete(index){
+                    alert("delete:"+index)
+                    this.data1.splice(index,1)
+                },
+                show(){
+                    alert("show")
+                },
+                getDate(date){
+                    this.date=date
+                    //alert(this.date)
+                    this.loaddata()
+                    // console.log(this.date)
+                },
+                // ! 测试参数传递的函数，正式使用前删除
+                getData(mydata){
+                    // console.log(mydata)
+                    this.loaddata()
+                    
+                },
+                getIllegal(){
+                    //alert(this.illegalMassage)
+                    this.loaddata()
+                },
+                clear(){
+                    this.date = ''
+                    this.plate = ''
+                    this.illegalMassage = ''
+                    this.area = ''
+                    this.loaddata()
+                }
+        },
+        created: function () {
+            this.loaddata()
+        },
+        mounted() {
+                this.$nextTick(() => {
+                    setInterval(this.idJudge, 500);
+                })
+        },
+        data () {
+            
+            return {
+                temp:'',
+                date:'', // *  日期数据
+                plate:'',  // * 搜索输入框数据
+                illegalMassage: '', // * 违规行为
+                columns1: [
+                    {
+                        title: 'ID',
+                        key: 'id'
+                    },
+                    {
+                        title: '视频ID',
+                        key: 'videoId'
+                    },
+                    {
+                        title: '车牌号',
+                        key: 'plate'
+                    },
+                    {
+                        title: '上传时间',  
+                        key: 'upload_time'
+                    },
+                    {
+                        title: '违规时间',
+                        key: 'illegal_time'
+                    },
+                    {
+                        title: '违规行为',
+                        key: 'illegal'
+                    },
+                    {
+                        title: '违法图片',
+                        key: 'img',
+                        render: (h, params) => {
+                            return h('viewer', [
+                                h('img', {
+                                    attrs: {
+                                        src: params.row.img,
+                                        style: 'width: 40px;height: 40px;'
+                                    }
+                                })
+                            ])
+                        },
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        render: (h,params) => {
+                            return(
+                                <div>
+                                    <i-button type="error"   size="small" onClick={()=>{this.delete(params.index)}}>删除</i-button>
+                                </div>
+                            );
+                        },
+                    }
+                ],
+                cityList: [
+                    {
+                        value: '超速行驶',
+                        label: '超速行驶'
+                    },
+                    {
+                        value: '碾压实线',
+                        label: '碾压实线'
+                    },
+                    {
+                        value: '不礼让行人',
+                        label: '不礼让行人'
+                    },
+                    {
+                        value: '不按信号灯行驶',
+                        label: '不按信号灯行驶'
+                    }
+                ],
+                data1: data1,
+            }
+        }
+    }
+</script>
